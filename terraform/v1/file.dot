@@ -1,0 +1,24 @@
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] google_compute_firewall.app-fw" [label = "google_compute_firewall.app-fw", shape = "box"]
+		"[root] google_compute_network.app-vpc" [label = "google_compute_network.app-vpc", shape = "box"]
+		"[root] google_compute_subnetwork.app-subnet" [label = "google_compute_subnetwork.app-subnet", shape = "box"]
+		"[root] google_container_cluster.app-cluster" [label = "google_container_cluster.app-cluster", shape = "box"]
+		"[root] google_container_node_pool.app-cluster-nodes" [label = "google_container_node_pool.app-cluster-nodes", shape = "box"]
+		"[root] provider.google" [label = "provider.google", shape = "diamond"]
+		"[root] google_compute_firewall.app-fw" -> "[root] google_compute_network.app-vpc"
+		"[root] google_compute_network.app-vpc" -> "[root] provider.google"
+		"[root] google_compute_subnetwork.app-subnet" -> "[root] google_compute_network.app-vpc"
+		"[root] google_container_cluster.app-cluster" -> "[root] google_compute_subnetwork.app-subnet"
+		"[root] google_container_node_pool.app-cluster-nodes" -> "[root] google_container_cluster.app-cluster"
+		"[root] meta.count-boundary (EachMode fixup)" -> "[root] google_compute_firewall.app-fw"
+		"[root] meta.count-boundary (EachMode fixup)" -> "[root] google_container_node_pool.app-cluster-nodes"
+		"[root] provider.google (close)" -> "[root] google_compute_firewall.app-fw"
+		"[root] provider.google (close)" -> "[root] google_container_node_pool.app-cluster-nodes"
+		"[root] root" -> "[root] meta.count-boundary (EachMode fixup)"
+		"[root] root" -> "[root] provider.google (close)"
+	}
+}
+
