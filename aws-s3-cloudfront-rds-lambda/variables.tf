@@ -9,6 +9,18 @@ variable "db_username" {
 }
 
 variable "db_name" {
-  description = "Username for RDS"
-  default     = "tasks"
+  description = "Database Name"
+  default     = "tasksdb"
+}
+
+variable "sentry_dsn" {
+  description = "Sentry TOKEN"
+}
+
+variable "splunk_url" {
+  description = "Splunk URL"
+}
+
+variable "splunk_token" {
+  description = "Splunk TOKEN"
 }
