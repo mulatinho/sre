@@ -8,7 +8,7 @@ const secretsManager = new AWS.SecretsManager();
 
 async function getSecrets() {
     let secrets = {};
-    const SECRET_NAMES = ["rds-credentials", "monitoring-credentials"];
+    const SECRET_NAMES = ["db-credentials", "monitoring-credentials"];
     for (let secretName of SECRET_NAMES) {
         const secret = await secretsManager.getSecretValue({ SecretId: secretName }).promise();
         secrets[secretName] = JSON.parse(secret.SecretString);
@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     let client;
     
     const secrets = await getSecrets();
-    const rdsCreds = secrets["rds-credentials"];
+    const rdsCreds = secrets["db-credentials"];
     const monitoringCreds = secrets["monitoring-credentials"];
 
     const sentryDsn = monitoringCreds.sentry_dsn;

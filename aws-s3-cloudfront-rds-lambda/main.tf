@@ -83,11 +83,13 @@ resource "random_password" "rds_password" {
 }
 
 resource "aws_secretsmanager_secret" "rds_secret" {
-  name = "rds-credentials"
+  name = "db-credentials"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret" "monitoring_secret" {
   name = "monitoring-credentials"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "rds_secret_version" {
@@ -212,7 +214,11 @@ resource "aws_iam_policy" "lambda_logging" {
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
-      Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+      Action   = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
       Resource = "arn:aws:logs:*:*:*"
     }]
   })
