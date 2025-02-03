@@ -10,7 +10,7 @@ variable "db_username" {
 
 variable "db_name" {
   description = "Database Name"
-  default     = "tasksdb"
+  default     = "tasks_db"
 }
 
 variable "sentry_dsn" {
