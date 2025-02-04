@@ -17,6 +17,11 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "aws_key_pair" "lambda-keypair" {
+  key_name   = "lambda-keypair"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
 ##
 ## AWS VPC with Subnets
 ##
@@ -63,6 +68,28 @@ resource "aws_subnet" "private_b" {
   }
 }
 
+resource "aws_internet_gateway" "lambda-igw" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_route_table" "lambda-rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.lambda-igw.id
+  }
+
+  tags = {
+    name = "lambda-rt"
+  }
+}
+
+resource "aws_route_table_association" "rt_public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.lambda-rt.id
+}
+
 resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "subnet-group"
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
@@ -83,12 +110,12 @@ resource "random_password" "rds_password" {
 }
 
 resource "aws_secretsmanager_secret" "rds_secret" {
-  name = "db-credentials"
+  name                    = "db-credentials"
   recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret" "monitoring_secret" {
-  name = "monitoring-credentials"
+  name                    = "monitor-credentials"
   recovery_window_in_days = 0
 }
 
@@ -145,7 +172,13 @@ resource "aws_security_group" "db_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"] # Apenas VPC interna pode acessar
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -213,8 +246,8 @@ resource "aws_iam_policy" "lambda_logging" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = [
+      Effect = "Allow"
+      Action = [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
         "logs:PutLogEvents"
@@ -278,43 +311,52 @@ resource "aws_api_gateway_resource" "tasks" {
   path_part   = "tasks"
 }
 
-resource "aws_api_gateway_method" "post_task" {
-  rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
-  resource_id   = aws_api_gateway_resource.tasks.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
+# resource "aws_api_gateway_method" "post_task" {
+#   rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
+#   resource_id   = aws_api_gateway_resource.tasks.id
+#   http_method   = "POST"
+#   authorization = "NONE"
+# }
 
-resource "aws_api_gateway_method" "get_tasks" {
-  rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
-  resource_id   = aws_api_gateway_resource.tasks.id
-  http_method   = "GET"
-  authorization = "NONE"
-}
+# resource "aws_api_gateway_method" "get_tasks" {
+#   rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
+#   resource_id   = aws_api_gateway_resource.tasks.id
+#   http_method   = "GET"
+#   authorization = "NONE"
+# }
 
-resource "aws_api_gateway_integration" "lambda_post_task" {
-  rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
-  resource_id             = aws_api_gateway_resource.tasks.id
-  http_method             = aws_api_gateway_method.post_task.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.tasks_lambda.invoke_arn
-}
+# resource "aws_api_gateway_integration" "lambda_post_task" {
+#   rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
+#   resource_id             = aws_api_gateway_resource.tasks.id
+#   http_method             = aws_api_gateway_method.post_task.http_method
+#   integration_http_method = "POST"
+#   type                    = "AWS_PROXY"
+#   uri                     = aws_lambda_function.tasks_lambda.invoke_arn
+# }
 
-resource "aws_api_gateway_integration" "lambda_get_tasks" {
-  rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
-  resource_id             = aws_api_gateway_resource.tasks.id
-  http_method             = aws_api_gateway_method.get_tasks.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.tasks_lambda.invoke_arn
-}
+# resource "aws_api_gateway_integration" "lambda_get_tasks" {
+#   rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
+#   resource_id             = aws_api_gateway_resource.tasks.id
+#   http_method             = aws_api_gateway_method.get_tasks.http_method
+#   integration_http_method = "POST"
+#   type                    = "AWS_PROXY"
+#   uri                     = aws_lambda_function.tasks_lambda.invoke_arn
+# }
 
 resource "aws_api_gateway_deployment" "deployment" {
-  depends_on  = [aws_api_gateway_integration.lambda_post_task, aws_api_gateway_integration.lambda_get_tasks]
+#  depends_on  = [aws_api_gateway_integration.lambda_post_task, aws_api_gateway_integration.lambda_get_tasks]
   rest_api_id = aws_api_gateway_rest_api.tasks_api.id
 }
 
+resource "aws_api_gateway_stage" "dev" {
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
+  stage_name    = "dev"
+}
+
+output "aws_api_gatewat_stage" {
+  value = aws_api_gateway_stage.dev.invoke_url
+}
 ##
 ## APP Lambda in Node.js
 ##
@@ -323,15 +365,15 @@ resource "aws_lambda_function" "tasks_lambda" {
   depends_on    = [aws_iam_policy.lambda_logging, aws_iam_policy.lambda_secrets_policy, aws_iam_policy.lambda_vpc_permissions]
   function_name = "tasks_handler"
   role          = aws_iam_role.lambda_role.arn
-  runtime       = "nodejs20.x"
-  handler       = "index.handler"
-  filename      = "api/lambda.zip"
-  timeout       = 10
+#  handler       = "main"
+  image_uri     = "709142056059.dkr.ecr.us-east-1.amazonaws.com/mulatocloud/images:latest"
+  package_type  = "Image"
+  timeout       = 5
 
-  vpc_config {
-    subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-    security_group_ids = [aws_security_group.lambda_sg.id]
-  }
+   #vpc_config {
+   #  subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+   #  security_group_ids = [aws_security_group.lambda_sg.id]
+   #}
 
   tags = {
     Name    = "Tasks Lambda"
@@ -339,17 +381,17 @@ resource "aws_lambda_function" "tasks_lambda" {
   }
 }
 
-resource "aws_lambda_function_url" "tasks_lambda_url" {
-  depends_on         = [aws_lambda_function.tasks_lambda]
-  function_name      = aws_lambda_function.tasks_lambda.function_name
-  authorization_type = "NONE"
-
-  cors {
-    allow_origins = ["*"]
-    allow_methods = ["HEAD", "GET", "POST"]
-    allow_headers = ["Content-Type"]
-  }
-}
+#resource "aws_lambda_function_url" "tasks_lambda_url" {
+#  depends_on         = [aws_lambda_function.tasks_lambda]
+#  function_name      = aws_lambda_function.tasks_lambda.function_name
+#  authorization_type = "NONE"
+#
+#  cors {
+#    allow_origins = ["*"]
+#    allow_methods = ["HEAD", "GET", "POST"]
+#    allow_headers = ["content-type"]
+#  }
+#}
 
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
@@ -359,9 +401,9 @@ resource "aws_lambda_permission" "apigw" {
   source_arn    = "${aws_api_gateway_rest_api.tasks_api.execution_arn}/*/*"
 }
 
-output "lambda_public_url" {
-  value = aws_lambda_function_url.tasks_lambda_url.function_url
-}
+#output "lambda_public_url" {
+#  value = aws_lambda_function_url.tasks_lambda_url.function_url
+#}
 
 ##
 ## AWS CloudWatch Monitoring 
@@ -432,4 +474,57 @@ resource "aws_sns_topic_subscription" "email_alert" {
   topic_arn = aws_sns_topic.lambda_alerts.arn
   protocol  = "email"
   endpoint  = "alex.mulatinho@yahoo.com"
+}
+
+## test
+
+
+resource "aws_security_group" "ec2_sg" {
+  name   = "ec2_sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "lambda_test_instance" {
+  ami           = "ami-0e8087266e36fe754"
+  instance_type = "t2.micro"
+  key_name      = "lambda-keypair"
+  subnet_id     = aws_subnet.public.id
+
+  associate_public_ip_address = true
+
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  provisioner "local-exec" {
+    command = "sudo apt update -y && sudo apt install postgresql-client -y"
+  }
+
+  ebs_block_device {
+    device_name           = "/dev/xvda"
+    volume_size           = 8
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+  tags = {
+    Name = "lambda-test-instance"
+  }
+}
+
+output "lambda_test_instance" {
+  value = aws_instance.lambda_test_instance.public_ip
+}
+output "lambda_rds_instance" {
+  value = aws_db_instance.postgres.address
 }
