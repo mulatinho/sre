@@ -1,0 +1,114 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: "Build hosts file remote"
+      lineinfile:
+        dest=/etc/hosts
+        regexp='.*{{ item }}.remote$'
+        line="{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}.remote"
+        state=present
+      with_items: "{{ groups['all'] }}"
+
+    - name: "Build hosts file internal"
+      lineinfile:
+        dest=/etc/hosts
+        regexp=".*{{ item.name }}$"
+        line="{{ item.ip }} {{ item.name }}.internal {{ item.name }}"
+        state=present
+      with_items:
+        - name: 'wireguardmaster1'
+          ip: '10.1.0.1'
+        - name: 'wireguardnode1'
+          ip: '10.1.0.21'
+        - name: 'wireguardnode2'
+          ip: '10.1.0.22'
+
+    - name: "Enable IP Forwarding"
+      lineinfile:
+        dest=/etc/sysctl.conf
+        regexp="^.*{{ item.key }}.*$"
+        line="{{ item.key }}={{ item.value }}"
+        state=present
+      with_items:
+        - { key: 'net.ipv4.conf.all.forwarding', value: 1 }
+        - { key: 'net.ipv6.conf.all.forwarding', value: 1 }
+        - { key: 'net.ipv4.ip_forward', value: 1 }
+      when:
+        - "'wireguardmaster1' in ansible_hostname"
+
+    - name: update packages
+      apt:
+        update_cache: yes
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gpg
+          - ntp
+          - vim
+          - curl
+          - tmux
+          - wireguard
+          - wireguard-tools
+          - dnsutils
+          - netcat-openbsd
+          - tcpdump
+          - resolvconf
+        state: present
+        update_cache: yes
+
+    - name: restart ntpd
+      service: name=ntp state=restarted
+
+    - name: Check if node1 token was executed
+      stat:
+        path: /etc/wireguard/server-privatekey
+      register: serverkey
+      when:
+        - "'wireguardmaster1' in ansible_hostname"
+
+    - name: Copy configuration template to master
+      ansible.builtin.copy:
+        src: wg0-server.conf
+        dest: /etc/wireguard/wg0.conf
+      when:
+        - "'wireguardmaster1' in ansible_hostname"
+        - not serverkey.stat.exists
+
+    - name: Copy configuration template to nodes
+      ansible.builtin.copy:
+        src: wg0-client.conf
+        dest: /etc/wireguard/wg0.conf
+      delegate_to: "{{item}}"
+      loop: "{{ groups['workers'] }}"
+
+    - name: Enabling kernel parameters and Generating keys for VPN
+      shell: "{{ item }}"
+      with_items:
+        - sysctl -p
+        - cd /etc/wireguard && wg genkey | tee server-privatekey | wg pubkey > server-publickey
+        - cd /etc/wireguard && wg genkey | tee node1-privatekey | wg pubkey > node1-publickey
+        - cd /etc/wireguard && wg genkey | tee node2-privatekey | wg pubkey > node2-publickey
+        - cd /etc/wireguard && chmod 600 *privatekey && chmod 600 wg0.conf
+      when:
+        - "'wireguardmaster1' in ansible_hostname"
+        - not serverkey.stat.exists
+
+#    - name: Replace placeholders
+#      lineinfile:
+#        path: /etc/wireguard/wg0.conf
+#        regexp: '^.*{{ key }}.*$'
+#        line: '{{ value }}'
+#      loop:
+#        - {key: 'SERVER_PRIVATE_KEY', value: 'zabbix2.company.com'}
+#        - {key: 'SERVER_PUBLIC_KEY', value: 'zabbix2.company.com'}
+#        - {key: 'NODE_PRIVATE_KEY', value: 'zabbix2.company.com'}
+#        - {key: 'NODE1_PUBLIC_KEY', value: 'zabbix2.company.com'}
+#        - {key: 'NODE2_PUBLIC_KEY', value: 'zabbix2.company.com'}
+#        - {key: 'NODE_IP', value: 'zabbix2.company.com'}

@@ -1,0 +1,36 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+Vagrant.configure("2") do |config|
+  config.vm.box = "debian/bookworm64"
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.define "wireguardmaster1" do |node|
+    node.vm.hostname = "wireguardmaster1.internal"
+
+    node.vm.provider :libvirt do |domain|
+      domain.memory = 768
+      domain.cpus = 1
+    end
+  end
+
+  (1..2).each do |j|
+    config.vm.define "wireguardnode#{j}" do |node|
+      node.vm.hostname = "wireguardnode#{j}.internal"
+
+      node.vm.provider :libvirt do |domain|
+        domain.memory = 512
+        domain.cpus = 1
+      end
+    end
+  end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+    ansible.groups = {
+      "machines" => ["wireguardmaster1", "wireguardnode1", "wireguardnode2"], 
+      "master" => ["wireguardmaster1"],
+      "workers" => ["wireguardnode1", "wireguardnode2"],
+    }
+  end
+end
