@@ -4,3 +4,6 @@
 *backup
 node_modules/
 *.zip
+*.swp
+
+k8s-latency-operator/bin
