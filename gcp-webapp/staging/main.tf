@@ -1,7 +1,7 @@
 locals {
-  project_name               = "mulatocloud-staging"
+  project_name               = var.project_name
   project_region             = "us-central1"
-  project_billing_account_id = "01E964-6AD19E-95135D"
+  project_billing_account_id = var.project_billing_account_id
   project_environments       = ["dev", "prod"]
   project_subnets = [
     { name = "db", cidr = "10.1.1.0/24" },
