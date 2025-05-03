@@ -1,0 +1,3 @@
+[submodule "vagrant-labs"]
+	path = vagrant-labs
+	url = https://github.com/mulatinho/vagrant-labs.git
