@@ -1,7 +1,6 @@
 # SRE Challenges
 
-Welcome to the **SRE Challenges** repository—a curated collection of hands-on labs, configurations, and documentation designed to explore and demonstrate various Site Reliability Engineering (SRE) practices.  
-This project serves as a practical resource for learning and applying SRE principles in real-world scenarios.
+Welcome to the **SRE** repository—a curated collection of hands-on labs, configurations, and documentation designed to explore and demonstrate various Site Reliability Engineering (SRE) practices. This project serves as a practical resource for learning and applying SRE principles in real-world scenarios.
 
 ## Repository Structure
 
@@ -40,13 +39,10 @@ To begin exploring the labs and resources:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/mulatinho/sre-challenges.git
+   git clone https://github.com/mulatinho/sre.git
    ```
 2. **Navigate to a Directory:**
 Choose a folder that aligns with your area of interest and follow the provided instructions to set up the environment and start the lab.
 
 ## Contributing
 Contributions are welcome! If you have suggestions, improvements, or additional labs to share, please open an issue or submit a pull request. Together, we can enhance this repository to better serve the SRE community.
-
-# License
-This project is licensed under the GPL License, allowing for open collaboration and sharing.
