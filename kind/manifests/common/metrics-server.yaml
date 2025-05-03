@@ -178,8 +178,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmp-dir
-      nodeSelector:
-        kubernetes.io/hostname: kubemaster1
       priorityClassName: system-cluster-critical
       serviceAccountName: metrics-server
       volumes:
