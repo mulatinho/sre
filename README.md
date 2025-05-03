@@ -1,4 +1,4 @@
-# SRE Challenges
+# Site Reliability Engineer Space
 
 Welcome to the **SRE** repository—a curated collection of hands-on labs, configurations, and documentation designed to explore and demonstrate various Site Reliability Engineering (SRE) practices. This project serves as a practical resource for learning and applying SRE principles in real-world scenarios.
 
