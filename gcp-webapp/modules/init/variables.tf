@@ -24,5 +24,6 @@ variable "services_enable" {
     "cloudbilling.googleapis.com",
     "compute.googleapis.com",
     "cloudresourcemanager.googleapis.com",
+    "secretmanager.googleapis.com",
   ]
 }

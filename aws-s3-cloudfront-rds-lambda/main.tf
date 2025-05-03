@@ -154,7 +154,7 @@ resource "aws_db_instance" "postgres" {
   db_name                = var.db_name
   username               = var.db_username
   password               = random_password.rds_password.result
-  publicly_accessible    = false
+  publicly_accessible    = true
   vpc_security_group_ids = [aws_security_group.db_sg.id]
   skip_final_snapshot    = true
   db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
@@ -186,10 +186,10 @@ resource "aws_security_group" "lambda_sg" {
   vpc_id = aws_vpc.main.id
 
   ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.db_sg.id]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -311,40 +311,40 @@ resource "aws_api_gateway_resource" "tasks" {
   path_part   = "tasks"
 }
 
-# resource "aws_api_gateway_method" "post_task" {
-#   rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
-#   resource_id   = aws_api_gateway_resource.tasks.id
-#   http_method   = "POST"
-#   authorization = "NONE"
-# }
+resource "aws_api_gateway_method" "post_task" {
+  rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
+  resource_id   = aws_api_gateway_resource.tasks.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
 
-# resource "aws_api_gateway_method" "get_tasks" {
-#   rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
-#   resource_id   = aws_api_gateway_resource.tasks.id
-#   http_method   = "GET"
-#   authorization = "NONE"
-# }
+resource "aws_api_gateway_method" "get_tasks" {
+  rest_api_id   = aws_api_gateway_rest_api.tasks_api.id
+  resource_id   = aws_api_gateway_resource.tasks.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
 
-# resource "aws_api_gateway_integration" "lambda_post_task" {
-#   rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
-#   resource_id             = aws_api_gateway_resource.tasks.id
-#   http_method             = aws_api_gateway_method.post_task.http_method
-#   integration_http_method = "POST"
-#   type                    = "AWS_PROXY"
-#   uri                     = aws_lambda_function.tasks_lambda.invoke_arn
-# }
+resource "aws_api_gateway_integration" "lambda_post_task" {
+  rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
+  resource_id             = aws_api_gateway_resource.tasks.id
+  http_method             = aws_api_gateway_method.post_task.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.tasks_lambda.invoke_arn
+}
 
-# resource "aws_api_gateway_integration" "lambda_get_tasks" {
-#   rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
-#   resource_id             = aws_api_gateway_resource.tasks.id
-#   http_method             = aws_api_gateway_method.get_tasks.http_method
-#   integration_http_method = "POST"
-#   type                    = "AWS_PROXY"
-#   uri                     = aws_lambda_function.tasks_lambda.invoke_arn
-# }
+resource "aws_api_gateway_integration" "lambda_get_tasks" {
+  rest_api_id             = aws_api_gateway_rest_api.tasks_api.id
+  resource_id             = aws_api_gateway_resource.tasks.id
+  http_method             = aws_api_gateway_method.get_tasks.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.tasks_lambda.invoke_arn
+}
 
 resource "aws_api_gateway_deployment" "deployment" {
-#  depends_on  = [aws_api_gateway_integration.lambda_post_task, aws_api_gateway_integration.lambda_get_tasks]
+  depends_on  = [aws_api_gateway_integration.lambda_post_task, aws_api_gateway_integration.lambda_get_tasks]
   rest_api_id = aws_api_gateway_rest_api.tasks_api.id
 }
 
@@ -365,15 +365,14 @@ resource "aws_lambda_function" "tasks_lambda" {
   depends_on    = [aws_iam_policy.lambda_logging, aws_iam_policy.lambda_secrets_policy, aws_iam_policy.lambda_vpc_permissions]
   function_name = "tasks_handler"
   role          = aws_iam_role.lambda_role.arn
-#  handler       = "main"
   image_uri     = "709142056059.dkr.ecr.us-east-1.amazonaws.com/mulatocloud/images:latest"
   package_type  = "Image"
   timeout       = 5
 
-   #vpc_config {
-   #  subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-   #  security_group_ids = [aws_security_group.lambda_sg.id]
-   #}
+  #vpc_config {
+  #  subnet_ids         = [aws_subnet.public.id, aws_subnet.private_a.id, aws_subnet.private_b.id]
+  #  security_group_ids = [aws_security_group.lambda_sg.id]
+  #}
 
   tags = {
     Name    = "Tasks Lambda"
