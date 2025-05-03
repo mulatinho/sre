@@ -1,9 +1,9 @@
 # Summary
 
-### 1. [Light SLO document of a Payments API](#option01)
-### 2. [Light SLO document of a User Authentication service](#option02)
-### 3. [Detailed SLO document of the Admin Dashboard- Availability](#option03)
-### 4. [Detailed SLO document of the Admin Dashboard - Latency](#option04)
+#### 1. [Light SLO document of a Payments API](#option01)
+#### 2. [Light SLO document of a User Authentication service](#option02)
+#### 3. [Detailed SLO document of the Admin Dashboard- Availability](#option03)
+#### 4. [Detailed SLO document of the Admin Dashboard - Latency](#option04)
 
 ---
 
