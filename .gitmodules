@@ -1,3 +1,6 @@
 [submodule "vagrant-labs"]
 	path = vagrant-labs
 	url = https://github.com/mulatinho/vagrant-labs.git
+[submodule "aws-jenkins-with-pipeline"]
+	path = aws-jenkins-with-pipeline
+	url = https://github.com/mulatinho/aws-jenkins-with-pipeline.git
