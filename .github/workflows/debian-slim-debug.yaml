@@ -17,3 +17,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker
+      - name: Publish
+        working-directory: rabbitmq
+        run: |-
+          docker build -t mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER .
+#          docker push mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER
