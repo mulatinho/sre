@@ -17,8 +17,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker
-      - name: Publish
-        working-directory: rabbitmq
+      - name: publish in docker hub
+        working-directory: debian-slim-debug
         run: |-
+          echo "$TOKEN" | docker login -u mulatinho --password-stdin
           docker build -t mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER .
-#          docker push mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER
+          docker tag mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER mulatinho/debian-slim-debug:latest
+          docker push mulatinho/debian-slim-debug:1.0.$GITHUB_RUN_NUMBER
+          docker push mulatinho/debian-slim-debug:latest
+        env:
+          TOKEN: ${{ secrets.PAT_DOCKER }}
