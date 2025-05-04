@@ -1,0 +1,19 @@
+name: debian-slim-debug
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'debian-slim-debug/**'
+      - '.github/workflows/debian-slim-debug.yaml'
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: [ "ubuntu-latest" ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: coursier/cache-action@v6.4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
