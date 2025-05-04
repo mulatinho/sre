@@ -1,0 +1,13 @@
+plugin: google.cloud.gcp_compute
+zones:
+  - us-central1-a
+projects:
+  - mulatocloud
+filters:
+  - status = RUNNING
+auth_kind: application
+keyed_groups:
+  - key: labels
+    default_value: "redis"
+hostnames:
+  - "private_ip"
