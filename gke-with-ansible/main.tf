@@ -135,7 +135,7 @@ resource "google_compute_instance" "redis" {
       size  = 100
     }
   }
-  
+
   tags = ["redis"]
   labels = {
     team = "sre"

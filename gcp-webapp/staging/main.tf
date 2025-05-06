@@ -12,8 +12,8 @@ locals {
 }
 
 data "google_secret_manager_secret_version" "project_secret" {
-  project = local.project_name 
-  secret = "project_secret"
+  project = local.project_name
+  secret  = "project_secret"
 }
 
 module "init" {
