@@ -4,3 +4,4 @@ resources:
 - reloader.yaml
 - metrics-server.yaml
 - monitoring
+- apigateway.yaml
