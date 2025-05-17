@@ -13,6 +13,3 @@ sleep 5 && flux bootstrap github \
 --branch=main \
 --path=kind/manifests \
 --personal
-
-echo ":. making sure the folder is synced.."
-sleep 5 && kubectl apply -f manifests/flux-system/gotk-sync.yaml
