@@ -1,0 +1,11 @@
+FROM alpine:latest 
+MAINTAINER Alexandre Mulatinho <alex@mulatinho.net> 
+
+LABEL Name Build-C
+LABEL Release Development
+LABEL Version 1.0.4
+LABEL RUN /usr/bin/docker -v ./:/app 
+
+WORKDIR /app
+RUN apk update
+RUN apk add --no-cache gcc curl hiredis-dev librdkafka-dev make libc-dev libpq-dev expect curl-dev cjson-dev autoconf automake
