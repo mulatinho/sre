@@ -1,9 +1,11 @@
 # Debug image used by me to troubleshooting
-# Last update: 2025/05/04
-FROM debian:bullseye-slim
+# Last update: 2026/06/29
+FROM debian:trixie-slim
 
 RUN apt-get update -y \
-    && apt-get install -y bash ca-certificates netcat-openbsd curl wget bind9-dnsutils net-tools iproute2 dnsutils iputils-ping tmux git \
+    && apt-get install -y bash ca-certificates netcat-openbsd curl wget \
+	bind9-dnsutils net-tools iproute2 dnsutils iputils-ping tmux git \
+	tcpdump sysstat procps htop nmap-common traceroute util-linux \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN addgroup --system mlt && adduser --system --ingroup mlt mlt
 
