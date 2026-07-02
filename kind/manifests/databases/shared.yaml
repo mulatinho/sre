@@ -1,0 +1,78 @@
+# Versão com REQUIRED anti-affinity (mais rigorosa)
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: shared-cluster
+  namespace: database
+spec:
+  bootstrap:
+    initdb:
+      database: shared
+      owner: shared_admin
+      secret:
+        name: shared-cluster-secret
+      postInitSQL:
+        - |
+          CREATE TABLE IF NOT EXISTS users (
+              id SERIAL PRIMARY KEY,
+              username VARCHAR(100) UNIQUE NOT NULL,
+              email VARCHAR(255) UNIQUE NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        - |
+          CREATE TABLE IF NOT EXISTS stock_positions (
+              id SERIAL PRIMARY KEY,
+              user_id INTEGER REFERENCES users(id),
+              symbol VARCHAR(10) NOT NULL,
+              shared_quantity INTEGER NOT NULL,
+              average_price DECIMAL(10,2) NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        - |
+          INSERT INTO users (username, email) VALUES 
+              ('alice_invest', 'alice@example.com'),
+              ('bob_trader', 'bob@example.com'),
+              ('carol_holder', 'carol@example.com')
+          ON CONFLICT (username) DO NOTHING;
+
+  instances: 2
+
+  affinity:
+    nodeSelector:
+      node-role.kubernetes.io/database: "true"
+
+    tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          cnpg.io/cluster: shared-cluster
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  storage:
+    size: 1Gi
+    storageClass: "standard" # maybe "local-path"
+
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+      effective_cache_size: "768MB"
+
+  monitoring:
+    enablePodMonitor: true
