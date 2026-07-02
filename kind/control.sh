@@ -15,6 +15,7 @@ case "$1" in
 		;;
 	"stop")
 		docker stop $(docker ps -q --filter "name=kind-")
+		docker stop $(docker ps -q --filter "name=(batman|robin)-")
 		;;
 	*)
 		help
