@@ -1,0 +1,62 @@
+# Versão com REQUIRED anti-affinity (mais rigorosa)
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: robin-cluster
+  namespace: database
+spec:
+  bootstrap:
+    pg_basebackup:
+      source: batman
+
+  instances: 1
+
+  externalClusters:
+    - name: batman
+      connectionParameters:
+        host: batman.lab.local
+        user: dedicated_admin
+        dbname: dedicated
+        sslmode: require
+  replica:
+    enabled: true
+    source: batman
+
+  affinity:
+    nodeSelector:
+      node-role.kubernetes.io/database: "true"
+
+    tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          cnpg.io/cluster: robin-cluster
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  storage:
+    size: 1Gi
+    storageClass: "standard" # maybe "local-path"
+
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+      effective_cache_size: "768MB"
+
+  monitoring:
+    enablePodMonitor: true
