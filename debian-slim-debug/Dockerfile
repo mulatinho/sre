@@ -9,7 +9,7 @@ RUN apt-get update -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN addgroup --system mlt && adduser --system --ingroup mlt mlt
 
-USER mlt
+USER root
 
 ENTRYPOINT [ "/bin/bash" ]
 
