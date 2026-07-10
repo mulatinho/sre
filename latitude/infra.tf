@@ -1,4 +1,22 @@
 terraform {
+  backend "s3" {
+    bucket = "sre-test"
+    key    = "dev/terraform.tfstate" # Change this to your path
+    region = "us-east-1"
+
+    # Custom endpoint
+    endpoints = {
+      s3 = "https://objects.us-east-1.storage.sh"
+    }
+
+    use_path_style              = true
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
+
   required_providers {
     latitudesh = {
       source  = "latitudesh/latitudesh"
@@ -31,8 +49,8 @@ resource "latitudesh_project" "alex_proj" {
 }
 
 resource "latitudesh_ssh_key" "ssh_key" {
-  name        = "alex-ssh"
-  public_key  = var.sshkey
+  name       = "alex-ssh"
+  public_key = var.sshkey
 }
 
 #resource "latitudesh_server" "sre-bm-alex-test" {
@@ -58,18 +76,18 @@ resource "latitudesh_ssh_key" "ssh_key" {
 #  ssh_keys         = [latitudesh_ssh_key.ssh_key.id]
 #}
 #
-#resource "latitudesh_virtual_machine" "app" {
-#  name             = "sre-alex-app"
-#  project          = latitudesh_project.alex_proj.id
-#  plan             = "vm-small"
-#  operating_system = "ubuntu_24_04_x64_lts"
-#  ssh_keys         = [latitudesh_ssh_key.ssh_key.id]
-#}
-#
+resource "latitudesh_virtual_machine" "app" {
+  name             = "sre-alex-app"
+  project          = latitudesh_project.alex_proj.id
+  plan             = "vm-small"
+  operating_system = "ubuntu_24_04_x64_lts"
+  ssh_keys         = [latitudesh_ssh_key.ssh_key.id]
+}
+
 #output "bastion_ip" {
 #  value = latitudesh_virtual_machine.bastion.primary_ipv4
 #}
-#
-#output "app_ip" {
-#  value = latitudesh_virtual_machine.app.primary_ipv4
-#}
+
+output "app_ip" {
+  value = latitudesh_virtual_machine.app.primary_ipv4
+}
