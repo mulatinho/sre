@@ -2,15 +2,15 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: shared-cluster
+  name: batman-cluster
   namespace: database
 spec:
   bootstrap:
     initdb:
-      database: shared
-      owner: shared_admin
+      database: dedicated
+      owner: dedicated_admin
       secret:
-        name: shared-cluster-secret
+        name: batman-cluster-secret
       postInitSQL:
         - |
           CREATE TABLE IF NOT EXISTS users (
@@ -35,7 +35,8 @@ spec:
               ('bob_trader', 'bob@example.com'),
               ('carol_holder', 'carol@example.com')
           ON CONFLICT (username) DO NOTHING;
-          INSERT INTO stock_positions (user_id, symbol, shares_quantity, average_price) VALUES
+        - |
+          INSERT INTO stock_positions (user_id, symbol, shared_quantity, average_price) VALUES
             (1, 'AAPL', 150, 175.50),
             (1, 'GOOGL', 75, 140.25),
             (1, 'MSFT', 200, 330.80),
@@ -47,8 +48,7 @@ spec:
             (3, 'VTI', 500, 250.00),
             (3, 'BND', 200, 75.30),
             (3, 'VXUS', 150, 60.40),
-            (3, 'SPY', 100, 520.00)
-          ON CONFLICT (user_id) DO NOTHING;
+            (3, 'SPY', 100, 520.00);
 
   instances: 2
 
@@ -68,7 +68,7 @@ spec:
       whenUnsatisfiable: DoNotSchedule
       labelSelector:
         matchLabels:
-          cnpg.io/cluster: shared-cluster
+          cnpg.io/cluster: batman-cluster
 
   resources:
     requests:
